@@ -4,11 +4,9 @@ import {
   Matches,
   MaxLength,
   MinLength,
-  Validate,
 } from 'class-validator';
-import { PasswordsMatchConstraint } from '../custom-validators/password-match.validator';
 
-export class CreateUserDto {
+export class LoginDto {
   @IsEmail(undefined, { message: 'Invalid email address' })
   @IsNotEmpty({ message: 'Email is required' })
   email: string;
@@ -23,8 +21,4 @@ export class CreateUserDto {
     message: 'Password must include a special character',
   })
   password: string;
-
-  @IsNotEmpty({ message: 'Confirm password is required' })
-  @Validate(PasswordsMatchConstraint)
-  confirmPassword: string;
 }

@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { UserAuthInfo } from './user-auth-info';
 import { UserBasicInfo } from './user-basic-info';
 import { UserOccupationInfo } from './user-occupation-info';
+import { UserTokenInfo } from './user-token-info';
 
 @Entity()
 @Unique(['authInfo.email'])
@@ -19,9 +20,12 @@ export class Users {
   @Column(() => UserOccupationInfo)
   occupationInfo?: UserOccupationInfo;
 
-  @Column({ default: 0, nullable: true })
+  @Column(() => UserTokenInfo)
+  tokenInfo?: UserTokenInfo;
+
+  @Column({ default: 0 })
   onboardingStep?: number;
 
-  @Column({ default: false, nullable: true })
+  @Column({ default: false })
   isOnboardingCompleted?: boolean;
 }

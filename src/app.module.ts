@@ -3,8 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
 import { DatabaseModule } from './database/database.module';
-import { UsersModule } from './modules/auth/users.module';
-import { MailModule } from './modules/mail/mail.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -16,8 +15,7 @@ import { MailModule } from './modules/mail/mail.module';
           : '.env.local',
     }),
     DatabaseModule,
-    UsersModule,
-    MailModule,
+    AuthModule,
   ],
   controllers: [AppController],
 })

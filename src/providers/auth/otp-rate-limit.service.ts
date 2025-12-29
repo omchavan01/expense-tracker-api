@@ -25,8 +25,8 @@ export class OtpRateLimitService {
 
     const key = `otp:rate:limit:${email}`;
     const limit = 3;
-    const ttlSeconds = 3 * 60; // 3 minutes
-    const count = (await this.redis.incr(key)) as number;
+    const ttlSeconds = 60; // 1 minute
+    const count = await this.redis.incr(key);
 
     if (count === 1) {
       await this.redis.expire(key, ttlSeconds);
