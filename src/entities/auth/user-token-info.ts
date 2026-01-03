@@ -1,15 +1,15 @@
 import { Column } from 'typeorm';
 
 export abstract class UserTokenInfo {
-  @Column({ nullable: true })
-  accessToken: string;
+  @Column({ type: 'varchar', nullable: true })
+  accessToken: string | null;
 
-  @Column({ nullable: true })
-  accessTokenExpiresAt: Date;
+  @Column({ type: 'date', nullable: true })
+  accessTokenExpiresAt: Date | null;
 
-  @Column({ nullable: true })
-  refreshToken: string;
+  @Column({ type: 'varchar', nullable: true })
+  refreshToken: string | null;
 
-  @Column({ nullable: true })
-  refreshTokenExpiresAt: Date;
+  @Column({ type: 'date', nullable: true })
+  refreshTokenExpiresAt: Date | null;
 }

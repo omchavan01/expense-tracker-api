@@ -15,17 +15,17 @@ export class Users {
   authInfo: UserAuthInfo;
 
   @Column(() => UserBasicInfo)
-  basicInfo?: UserBasicInfo;
+  basicInfo: UserBasicInfo;
 
   @Column(() => UserOccupationInfo)
-  occupationInfo?: UserOccupationInfo;
+  occupationInfo: UserOccupationInfo;
 
   @Column(() => UserTokenInfo)
-  tokenInfo?: UserTokenInfo;
+  tokenInfo: UserTokenInfo;
 
   @Column({ default: 0 })
-  onboardingStep?: number;
+  onboardingStep: number;
 
   @Column({ default: false })
-  isOnboardingCompleted?: boolean;
+  isOnboardingCompleted: boolean;
 }

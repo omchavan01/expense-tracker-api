@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-interface JwtPayload {
-  sub: number;
-  email: string;
-  exp: number;
-  iat?: number;
-}
+import { JwtPayload } from 'src/utils/types';
 
 @Injectable()
 export class JWTRefreshTokenService {
@@ -16,7 +11,7 @@ export class JWTRefreshTokenService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async refreshToken(payload: any) {
+  async refreshToken(payload: JwtPayload) {
     return await this.jwtService.signAsync(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
       expiresIn: '30d',

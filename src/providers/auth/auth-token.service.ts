@@ -1,38 +1,22 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Users } from 'src/entities/auth/users.entity';
-import { hashPassword } from 'src/utils/hash-password';
 import { JWTAccessTokenService } from '../jwt/jwt-access-token.service';
 import { JWTRefreshTokenService } from '../jwt/jwt-refresh-token.service';
+import { hashPassword } from 'src/utils/hash-password';
 
 @Injectable()
-export class UsersService {
+export class AuthTokenService {
   constructor(
     @InjectRepository(Users) private usersRepository: Repository<Users>,
     private readonly jwtAccessTokenService: JWTAccessTokenService,
     private readonly jwtRefreshTokenService: JWTRefreshTokenService,
   ) {}
 
-  async setPassword(email: string, password: string) {
-    const existingUser = await this.usersRepository.findOne({
-      where: { authInfo: { email } },
-    });
-
-    // Check if user already exists
-    if (existingUser) throw new ConflictException('User already exists');
-
-    //Hash password
-    const hashedPassword = await hashPassword(password);
-    const newUser = await this.usersRepository.save({
-      authInfo: { email, password: hashedPassword },
-      onboardingStep: 0,
-      isOnboardingCompleted: false,
-    });
-
-    // Generate JWT tokens for new user
-    const payload = { sub: newUser.id, email: newUser.authInfo.email };
+  async generateTokens(user: Users) {
+    const payload = { sub: user.id, email: user.authInfo.email };
     const accessToken = await this.jwtAccessTokenService.accessToken(payload);
     const refreshToken =
       await this.jwtRefreshTokenService.refreshToken(payload);
@@ -41,13 +25,15 @@ export class UsersService {
       await this.jwtAccessTokenService.verifyAccessToken(accessToken);
     const decodedRefreshToken =
       await this.jwtRefreshTokenService.verifyRefreshToken(refreshToken);
-    const accessTokenExpiresAt = new Date(decodedAccessToken.exp * 1000);
-    const refreshTokenExpiresAt = new Date(decodedRefreshToken.exp * 1000);
+    const accessTokenExpiresAt = new Date(decodedAccessToken.exp! * 1000);
+    const refreshTokenExpiresAt = new Date(decodedRefreshToken.exp! * 1000);
 
     const hashedAccessToken = await hashPassword(accessToken);
     const hashedRefreshToken = await hashPassword(refreshToken);
     await this.usersRepository.update(
-      { id: newUser.id },
+      {
+        id: user.id,
+      },
       {
         tokenInfo: {
           accessToken: hashedAccessToken,
@@ -59,15 +45,10 @@ export class UsersService {
     );
 
     return {
-      message: 'User created successfully',
-      result: {
-        accessToken,
-        refreshToken,
-        accessTokenExpiresAt,
-        refreshTokenExpiresAt,
-        onboardingStep: newUser.onboardingStep,
-        isOnboardingCompleted: newUser.isOnboardingCompleted,
-      },
+      accessToken,
+      refreshToken,
+      accessTokenExpiresAt,
+      refreshTokenExpiresAt,
     };
   }
 }

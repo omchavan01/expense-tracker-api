@@ -1,68 +1,78 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
+import { AuthTokenService } from './auth-token.service';
 import { Users } from 'src/entities/auth/users.entity';
-import { JWTAccessTokenService } from '../jwt/jwt-access-token.service';
-import { JWTRefreshTokenService } from '../jwt/jwt-refresh-token.service';
+import { UserAuthInfo } from 'src/entities/auth/user-auth-info';
 import { comparePassword, hashPassword } from 'src/utils/hash-password';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(Users) private usersRepository: Repository<Users>,
-    private readonly jwtAccessTokenService: JWTAccessTokenService,
-    private readonly jwtRefreshTokenService: JWTRefreshTokenService,
+    private readonly authTokenService: AuthTokenService,
   ) {}
 
-  async login(email: string, password: string) {
+  async setPassword(payload: UserAuthInfo) {
+    const existingUser = await this.usersRepository.findOne({
+      where: { authInfo: { email: payload.email } },
+    });
+
+    // Check if user already exists
+    if (existingUser) throw new ConflictException('User already exists');
+
+    //Hash password
+    const hashedPassword = await hashPassword(payload.password);
+
+    // Create new user
+    const newUser = await this.usersRepository.save({
+      authInfo: { email: payload.email, password: hashedPassword },
+      onboardingStep: 0,
+      isOnboardingCompleted: false,
+    });
+
+    // Generate tokens
+    const tokens = await this.authTokenService.generateTokens(newUser);
+
+    return {
+      message: 'User created successfully',
+      result: {
+        ...tokens,
+        userId: newUser.id,
+        onboardingStep: newUser.onboardingStep,
+      },
+    };
+  }
+
+  async login(payload: UserAuthInfo) {
     const user = await this.usersRepository.findOne({
-      where: { authInfo: { email } },
+      where: { authInfo: { email: payload.email } },
     });
 
     const comparedPassword = await comparePassword(
-      password,
+      payload.password,
       user?.authInfo?.password ?? '',
     );
 
+    // Check if user exists and password is correct
     if (!user || !comparedPassword)
       throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { sub: user.id, email: user.authInfo.email };
-    const accessToken = await this.jwtAccessTokenService.accessToken(payload);
-    const refreshToken =
-      await this.jwtRefreshTokenService.refreshToken(payload);
+    // Generate tokens
+    const tokens = await this.authTokenService.generateTokens(user);
 
-    const decodedAccessToken =
-      await this.jwtAccessTokenService.verifyAccessToken(accessToken);
-    const decodedRefreshToken =
-      await this.jwtRefreshTokenService.verifyRefreshToken(refreshToken);
-
-    const accessTokenExpiresAt = new Date(decodedAccessToken.exp * 1000);
-    const refreshTokenExpiresAt = new Date(decodedRefreshToken.exp * 1000);
-
-    const hashedAccessToken = await hashPassword(accessToken);
-    const hashedRefreshToken = await hashPassword(refreshToken);
-    await this.usersRepository.update(
-      {
-        id: user.id,
-      },
-      {
-        tokenInfo: {
-          accessToken: hashedAccessToken,
-          refreshToken: hashedRefreshToken,
-          accessTokenExpiresAt,
-          refreshTokenExpiresAt,
-        },
-      },
-    );
     return {
       message: 'User logged in successfully',
       result: {
-        accessToken,
-        refreshToken,
-        accessTokenExpiresAt,
-        refreshTokenExpiresAt,
+        ...tokens,
+        userId: user.id,
+        onboardingStep: user.onboardingStep,
+        isOnboardingCompleted: user.isOnboardingCompleted,
       },
     };
   }

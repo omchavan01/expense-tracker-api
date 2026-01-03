@@ -3,15 +3,15 @@ import { Column } from 'typeorm';
 import { GenderEnum } from 'src/utils/enums/gender-enum';
 
 export abstract class UserBasicInfo {
-  @Column({ nullable: true })
-  firstName?: string;
+  @Column({ type: 'varchar', nullable: true })
+  firstName: string | null;
 
-  @Column({ nullable: true })
-  lastName?: string;
+  @Column({ type: 'varchar', nullable: true })
+  lastName: string | null;
 
-  @Column({ nullable: true })
-  age?: number;
+  @Column({ type: 'int', nullable: true })
+  age: number | null;
 
-  @Column({ enum: GenderEnum, nullable: true })
-  gender?: GenderEnum;
+  @Column({ type: 'enum', enum: GenderEnum, nullable: true })
+  gender: GenderEnum | null;
 }

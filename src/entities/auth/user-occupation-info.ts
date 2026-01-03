@@ -3,21 +3,18 @@ import { Column } from 'typeorm';
 import { IncomeCycleEnum } from 'src/utils/enums/income-cycle-enum';
 
 export abstract class UserOccupationInfo {
-  @Column({ nullable: true })
-  jobTitle?: string;
+  @Column({ type: 'varchar', nullable: true })
+  jobTitle: string | null;
 
-  @Column({ nullable: true })
-  companyName?: string;
+  @Column({ type: 'varchar', nullable: true })
+  companyName: string | null;
 
-  @Column({ nullable: true })
-  region?: string;
+  @Column({ type: 'varchar', nullable: true })
+  country: string | null;
 
-  @Column({ nullable: true })
-  country?: string;
+  @Column({ type: 'enum', enum: IncomeCycleEnum, nullable: true })
+  incomeCycle: IncomeCycleEnum | null;
 
-  @Column({ enum: IncomeCycleEnum, nullable: true })
-  incomeCycle?: IncomeCycleEnum;
-
-  @Column({ nullable: true })
-  income?: number;
+  @Column({ type: 'int', nullable: true })
+  income: number | null;
 }
