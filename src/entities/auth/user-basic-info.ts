@@ -9,8 +9,8 @@ export abstract class UserBasicInfo {
   @Column({ type: 'varchar', nullable: true })
   lastName: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  age: number | null;
+  @Column({ type: 'date', nullable: true })
+  dateOfBirth: Date | null;
 
   @Column({ type: 'enum', enum: GenderEnum, nullable: true })
   gender: GenderEnum | null;

@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer';
 import {
   IsEnum,
-  IsInt,
   IsNotEmpty,
+  IsNumber,
   IsString,
   Min,
   ValidateNested,
@@ -27,7 +27,11 @@ class OccupationInfo {
   @IsNotEmpty({ message: 'Income cycle is required' })
   incomeCycle: IncomeCycleEnum;
 
-  @IsInt()
+  @Type(() => Number)
+  @IsNumber(
+    { maxDecimalPlaces: 2, allowNaN: false, allowInfinity: false },
+    { message: 'Income must be a valid number' },
+  )
   @IsNotEmpty({ message: 'Income is required' })
   @Min(1, { message: 'Income must be at least 1' })
   income: number;

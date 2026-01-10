@@ -1,15 +1,15 @@
 import { Type } from 'class-transformer';
 import {
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsString,
-  Max,
-  Min,
+  IsDate,
   ValidateNested,
+  Validate,
 } from 'class-validator';
 
 import { GenderEnum } from 'src/utils/enums/gender-enum';
+import { DateOfBirthConstraint } from '../custom-validators/date-of-birth.validator';
 
 class BasicInfo {
   @IsString()
@@ -19,11 +19,11 @@ class BasicInfo {
   @IsString()
   lastName: string;
 
-  @IsInt()
-  @IsNotEmpty({ message: 'Age is required' })
-  @Min(13, { message: 'You must be at least 13 years old' })
-  @Max(120, { message: 'Please enter a valid age' })
-  age: number;
+  @Type(() => Date)
+  @IsDate({ message: 'Date of birth must be a valid date' })
+  @IsNotEmpty({ message: 'Date of birth is required' })
+  @Validate(DateOfBirthConstraint)
+  dateOfBirth: Date;
 
   @IsEnum(GenderEnum)
   @IsNotEmpty({ message: 'Gender is required' })

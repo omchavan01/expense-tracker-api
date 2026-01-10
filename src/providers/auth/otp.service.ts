@@ -4,10 +4,9 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import otpGenerator from 'otp-generator';
 
 import { Users } from 'src/entities/auth/users.entity';
@@ -39,24 +38,27 @@ export class OtpService {
       digits: true,
     });
 
-    // Delete existing OTP
-    await this.otpsRepository.delete({ email });
-
     if (!(await this.otpRateLimitService.rateLimit(email))) {
       throw new BadRequestException('Too many OTP requests. Try again later.');
     }
 
-    // Send OTP to email
-    const isSent = await this.mailService.sendOtp(email, otp);
-    if (!isSent) throw new InternalServerErrorException('Failed to send OTP');
+    // Update or Insert OTP to database
+    await this.otpsRepository.upsert(
+      {
+        email,
+        otp,
+        isVerified: false,
+        expiresAt: new Date(Date.now() + 3 * 60 * 1000),
+      },
+      ['email'],
+    );
 
-    // Save OTP to database
-    await this.otpsRepository.save({
-      email,
-      otp,
-      isVerified: false,
-      expiresAt: new Date(Date.now() + 3 * 60 * 1000),
-    });
+    // Send OTP to email and catch error
+    try {
+      await this.mailService.sendOtp(email, otp);
+    } catch (error) {
+      if (error) throw new InternalServerErrorException('Failed to send OTP');
+    }
 
     return {
       message: 'OTP sent successfully',
@@ -66,16 +68,17 @@ export class OtpService {
 
   async verifyOtp(email: string, otp: string) {
     const otpData = await this.otpsRepository.findOne({
-      where: { otp: otp, email: email },
+      where: {
+        otp: otp,
+        email: email,
+        isVerified: false,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
-    // Check if OTP exists
-    if (!otpData) throw new NotFoundException('Invalid OTP');
-    // Check if OTP is already verified
-    if (otpData.isVerified) throw new ConflictException('OTP already verified');
-    // Check if OTP is expired
-    if (otpData.expiresAt < new Date())
-      throw new UnauthorizedException('OTP expired');
+    // Check if OTP does not exist
+    if (!otpData)
+      throw new NotFoundException('You have entered an invalid OTP');
 
     // Verify OTP
     await this.otpsRepository.update(otpData.id, { isVerified: true });
@@ -87,12 +90,16 @@ export class OtpService {
 
   async resendOtp(email: string) {
     const otpData = await this.otpsRepository.findOne({
-      where: { email: email },
+      where: {
+        email: email,
+        isVerified: false,
+        expiresAt: MoreThan(new Date()),
+      },
     });
 
     // Check if OTP exists
-    if (otpData && otpData.expiresAt > new Date())
-      throw new ConflictException('OTP already exists and is not expired');
+    if (otpData)
+      throw new ConflictException('An OTP already exists for this email');
 
     // Generate OTP
     const otp = otpGenerator.generate(4, {
@@ -102,24 +109,27 @@ export class OtpService {
       digits: true,
     });
 
-    // Delete existing OTP
-    await this.otpsRepository.delete({ email });
-
     if (!(await this.otpRateLimitService.rateLimit(email))) {
       throw new BadRequestException('Too many OTP requests. Try again later.');
     }
 
-    // Send OTP to email
-    const isSent = await this.mailService.sendOtp(email, otp);
-    if (!isSent) throw new InternalServerErrorException('Failed to send OTP');
+    // Update or Insert OTP to database
+    await this.otpsRepository.upsert(
+      {
+        email,
+        otp,
+        isVerified: false,
+        expiresAt: new Date(Date.now() + 3 * 60 * 1000),
+      },
+      ['email'],
+    );
 
-    // Save OTP to database
-    await this.otpsRepository.save({
-      email,
-      otp,
-      isVerified: false,
-      expiresAt: new Date(Date.now() + 3 * 60 * 1000),
-    });
+    // Send OTP to email and catch error
+    try {
+      await this.mailService.sendOtp(email, otp);
+    } catch (error) {
+      if (error) throw new InternalServerErrorException('Failed to send OTP');
+    }
 
     return {
       message: 'OTP resent successfully',
