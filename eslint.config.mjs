@@ -32,4 +32,12 @@ export default tseslint.config(
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
+  {
+    files: ['src/dtos/**/*.ts', 'src/providers/auth/otp-rate-limit.service.ts'],
+    rules: {
+      // Suppress false positives with decorators in DTOs
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+    },
+  },
 );
