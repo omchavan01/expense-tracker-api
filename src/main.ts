@@ -12,7 +12,6 @@ const bootstrap = async () => {
     const port = configService.get<number>('PORT');
     const baseUrl = configService.get<string>('BASE_URL');
 
-    // Set global prefix if BASE_URL exists
     if (baseUrl) {
       app.setGlobalPrefix(baseUrl);
     }

@@ -6,6 +6,7 @@ import { OnboardingOccupationInfoDto } from 'src/dtos/onboarding/occupation-info
 import { AuthJwtGuard } from 'src/guards/auth-jwt.guard';
 import { GetUser } from 'src/decorators/get-user.decorator';
 import type { AuthenticatedUser } from 'src/utils/types';
+import { OnboardingCategoriesInfoDto } from 'src/dtos/onboarding/categories-info.dto';
 
 @Controller('/onboarding')
 export class OnboardingController {
@@ -29,6 +30,18 @@ export class OnboardingController {
     return this.onboardingService.completeOccupationInfo(
       user.id,
       dto.occupationInfo,
+    );
+  }
+
+  @UseGuards(AuthJwtGuard)
+  @Post('/categories-info')
+  completeCategoriesInfo(
+    @Body() dto: OnboardingCategoriesInfoDto,
+    @GetUser() user: AuthenticatedUser,
+  ) {
+    return this.onboardingService.completeCategoriesInfo(
+      user.id,
+      dto.categoriesInfo,
     );
   }
 }

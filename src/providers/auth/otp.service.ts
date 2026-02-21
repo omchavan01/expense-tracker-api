@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import otpGenerator from 'otp-generator';
+import { randomInt } from 'crypto';
 
 import { Users } from 'src/entities/auth/users.entity';
 import { Otps } from 'src/entities/auth/otps.entity';
@@ -17,8 +17,9 @@ import { MailService } from '../mail/mail.service';
 @Injectable()
 export class OtpService {
   constructor(
-    @InjectRepository(Users) private usersRepository: Repository<Users>,
-    @InjectRepository(Otps) private otpsRepository: Repository<Otps>,
+    @InjectRepository(Users)
+    private readonly usersRepository: Repository<Users>,
+    @InjectRepository(Otps) private readonly otpsRepository: Repository<Otps>,
     private readonly otpRateLimitService: OtpRateLimitService,
     private readonly mailService: MailService,
   ) {}
@@ -31,12 +32,7 @@ export class OtpService {
     if (user) throw new ConflictException('User already exists');
 
     // Generate OTP
-    const otp = otpGenerator.generate(4, {
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-      digits: true,
-    });
+    const otp = randomInt(1000, 10000).toString();
 
     if (!(await this.otpRateLimitService.rateLimit(email))) {
       throw new BadRequestException('Too many OTP requests. Try again later.');
@@ -102,12 +98,7 @@ export class OtpService {
       throw new ConflictException('An OTP already exists for this email');
 
     // Generate OTP
-    const otp = otpGenerator.generate(4, {
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-      digits: true,
-    });
+    const otp = randomInt(1000, 10000).toString();
 
     if (!(await this.otpRateLimitService.rateLimit(email))) {
       throw new BadRequestException('Too many OTP requests. Try again later.');

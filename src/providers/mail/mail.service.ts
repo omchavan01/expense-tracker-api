@@ -1,24 +1,18 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-  private readonly transporter: nodemailer.Transporter;
+  private readonly resend: Resend;
 
   constructor(private readonly configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: this.configService.get<string>('NODEMAILER_EMAIL'),
-        pass: this.configService.get<string>('NODEMAILER_PASSWORD'),
-      },
-    });
+    this.resend = new Resend(this.configService.get<string>('RESEND_API_KEY'));
   }
 
   async sendOtp(email: string, otp: string) {
     const mailOptions = {
-      from: this.configService.get<string>('NODEMAILER_EMAIL'),
+      from: `"Expense Tracker" <${this.configService.get<string>('RESEND_EMAIL')}>`,
       to: email,
       subject: 'OTP for verification',
       html: `
@@ -30,14 +24,14 @@ export class MailService {
       </div>
     `,
     };
-    try {
-      await this.transporter.sendMail(mailOptions);
-      return true;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        'Failed to send OTP',
-        error as Error,
+    const response = await this.resend.emails.send(mailOptions);
+    if (response.error) {
+      console.error(
+        JSON.stringify(response.error, null, 2),
+        'Error sending OTP',
       );
+      throw new InternalServerErrorException('Failed to send OTP');
     }
+    return true;
   }
 }
