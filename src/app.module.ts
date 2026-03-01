@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { CurrencyModule } from './modules/currency/currency.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module';
     DatabaseModule,
     AuthModule,
     OnboardingModule,
+    CurrencyModule,
   ],
   controllers: [AppController],
 })

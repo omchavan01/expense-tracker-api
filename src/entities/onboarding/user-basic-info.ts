@@ -1,7 +1,5 @@
 import { Column } from 'typeorm';
 
-import { GenderEnum } from 'src/utils/enums/gender-enum';
-
 export abstract class UserBasicInfo {
   @Column({ type: 'varchar', nullable: true })
   firstName: string | null;
@@ -9,9 +7,6 @@ export abstract class UserBasicInfo {
   @Column({ type: 'varchar', nullable: true })
   lastName: string | null;
 
-  @Column({ type: 'date', nullable: true })
-  dateOfBirth: Date | null;
-
-  @Column({ type: 'enum', enum: GenderEnum, nullable: true })
-  gender: GenderEnum | null;
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true })
+  currentBalance: string | null;
 }

@@ -14,9 +14,15 @@ export class AuthController {
     private authService: AuthService,
   ) {}
 
-  @Post('/send-otp')
+  @Post('/new-user/send-otp')
   newUserSendOtp(@Body() dto: NewUserSendOtpDto) {
     return this.otpService.newUserSendOtp(dto.email);
+  }
+
+  // Using same dto as new user send otp to avoid code duplication
+  @Post('/reset-password/send-otp')
+  resetPasswordSendOtp(@Body() dto: NewUserSendOtpDto) {
+    return this.otpService.resetPasswordSendOtp(dto.email);
   }
 
   @Post('/verify-otp')
@@ -32,6 +38,15 @@ export class AuthController {
   @Post('/set-password')
   setPassword(@Body() dto: SetPasswordDto) {
     return this.authService.setPassword({
+      email: dto.email,
+      password: dto.password,
+    });
+  }
+
+  // Using same dto as set password to avoid code duplication
+  @Post('/reset-password')
+  resetPassword(@Body() dto: SetPasswordDto) {
+    return this.authService.resetPassword({
       email: dto.email,
       password: dto.password,
     });

@@ -7,10 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Users } from 'src/entities/auth/users.entity';
-import { UserBasicInfo } from 'src/entities/onboarding/user-basic-info';
-import { UserOccupationInfo } from 'src/entities/onboarding/user-occupation-info';
 import { Categories } from 'src/entities/onboarding/categories.entity';
+import { BasicInfo } from 'src/dtos/onboarding/basic-info.dto';
 import { CategoryInfo } from 'src/dtos/onboarding/categories-info.dto';
+import { CategoryTypeEnum } from 'src/utils/enums/category-type-enum';
 
 @Injectable()
 export class OnboardingService {
@@ -21,51 +21,27 @@ export class OnboardingService {
     private readonly categoriesRepository: Repository<Categories>,
   ) {}
 
-  async completeBasicInfo(userId: number, basicInfo: UserBasicInfo) {
+  async completeBasicInfo(userId: number, basicInfo: BasicInfo) {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
     });
-
     if (!user) throw new NotFoundException('User does not exist');
     if (user.onboardingStep !== 0)
       throw new BadRequestException('Basic Info already completed');
 
     const updatedUser = await this.usersRepository.save({
       ...user,
-      basicInfo,
+      basicInfo: {
+        firstName: basicInfo.firstName,
+        lastName: basicInfo.lastName,
+        currentBalance: basicInfo.currentBalance,
+      },
+      currencyCode: basicInfo.currencyCode,
       onboardingStep: 1,
     });
 
     return {
       message: 'Basic Info completed successfully',
-      result: {
-        onboardingStep: updatedUser?.onboardingStep,
-        isOnboardingCompleted: updatedUser?.isOnboardingCompleted,
-      },
-    };
-  }
-
-  async completeOccupationInfo(
-    userId: number,
-    occupationInfo: UserOccupationInfo,
-  ) {
-    const user = await this.usersRepository.findOne({
-      where: { id: userId },
-    });
-
-    if (!user) throw new NotFoundException('User does not exist');
-    if (user.onboardingStep !== 1)
-      throw new BadRequestException('Occupation Info already completed');
-
-    const updatedUser = await this.usersRepository.save({
-      ...user,
-      occupationInfo,
-      onboardingStep: 2,
-      isOnboardingCompleted: false,
-    });
-
-    return {
-      message: 'Occupation Info completed successfully',
       result: {
         onboardingStep: updatedUser?.onboardingStep,
         isOnboardingCompleted: updatedUser?.isOnboardingCompleted,
@@ -79,14 +55,29 @@ export class OnboardingService {
     });
 
     if (!user) throw new NotFoundException('User does not exist');
-    if (user.onboardingStep !== 2)
+    if (user.onboardingStep !== 1)
       throw new BadRequestException('Categories Info already completed');
 
-    if (categoriesInfo.length < 5)
-      throw new BadRequestException('Minimum 5 categories are required');
+    const expenseCategories = categoriesInfo.filter(
+      (category) => category.categoryType === CategoryTypeEnum.EXPENSE,
+    );
+    const incomeCategories = categoriesInfo.filter(
+      (category) => category.categoryType === CategoryTypeEnum.INCOME,
+    );
 
-    if (categoriesInfo.length > 15)
-      throw new BadRequestException('Maximum 15 categories are allowed');
+    if (expenseCategories.length < 5)
+      throw new BadRequestException(
+        'Minimum 5 expense categories are required',
+      );
+    if (incomeCategories.length < 1)
+      throw new BadRequestException('Minimum 1 income category is required');
+
+    if (expenseCategories.length > 15)
+      throw new BadRequestException(
+        'Maximum 15 expense categories are allowed',
+      );
+    if (incomeCategories.length > 5)
+      throw new BadRequestException('Maximum 5 income categories are allowed');
 
     const categoriesEntities = categoriesInfo.map((category) =>
       this.categoriesRepository.create({
@@ -99,7 +90,7 @@ export class OnboardingService {
 
     const updatedUser = await this.usersRepository.save({
       ...user,
-      onboardingStep: 3,
+      onboardingStep: 2,
       isOnboardingCompleted: true,
     });
 

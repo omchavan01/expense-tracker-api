@@ -1,17 +1,7 @@
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsString,
-  IsDate,
-  ValidateNested,
-  Validate,
-} from 'class-validator';
+import { IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 
-import { GenderEnum } from 'src/utils/enums/gender-enum';
-import { DateOfBirthConstraint } from '../custom-validators/date-of-birth.validator';
-
-class BasicInfo {
+export class BasicInfo {
   @IsString()
   @IsNotEmpty({ message: 'First name is required' })
   firstName: string;
@@ -19,15 +9,13 @@ class BasicInfo {
   @IsString()
   lastName: string;
 
-  @Type(() => Date)
-  @IsDate({ message: 'Date of birth must be a valid date' })
-  @IsNotEmpty({ message: 'Date of birth is required' })
-  @Validate(DateOfBirthConstraint)
-  dateOfBirth: Date;
+  @IsString()
+  @IsNotEmpty({ message: 'Currency code is required' })
+  currencyCode: string;
 
-  @IsEnum(GenderEnum)
-  @IsNotEmpty({ message: 'Gender is required' })
-  gender: GenderEnum;
+  @IsString({ message: 'Current balance must be a valid number' })
+  @IsNotEmpty({ message: 'Current balance is required' })
+  currentBalance: string;
 }
 
 export class OnboardingBasicInfoDto {
