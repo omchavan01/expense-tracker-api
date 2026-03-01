@@ -26,10 +26,7 @@ export class MailService {
     };
     const response = await this.resend.emails.send(mailOptions);
     if (response.error) {
-      console.error(
-        JSON.stringify(response.error, null, 2),
-        'Error sending OTP',
-      );
+      console.error(response, 'Error sending OTP');
       throw new InternalServerErrorException('Failed to send OTP');
     }
     return true;

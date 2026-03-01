@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -28,10 +29,12 @@ export class AuthService {
 
     //Hash password
     const hashedPassword = await hashPassword(payload.password);
-
     // Create new user
     const newUser = await this.usersRepository.save({
-      authInfo: { email: payload.email, password: hashedPassword },
+      authInfo: {
+        email: payload.email.toLowerCase(),
+        password: hashedPassword,
+      },
       onboardingStep: 0,
       isOnboardingCompleted: false,
     });
@@ -46,6 +49,30 @@ export class AuthService {
         userId: newUser.id,
         onboardingStep: newUser.onboardingStep,
       },
+    };
+  }
+
+  async resetPassword(payload: UserAuthInfo) {
+    const existingUser = await this.usersRepository.findOne({
+      where: { authInfo: { email: payload.email } },
+    });
+
+    // Check if user already exists
+    if (!existingUser) throw new NotFoundException('User not found');
+
+    //Hash password
+    const hashedPassword = await hashPassword(payload.password);
+
+    // Update password
+    await this.usersRepository.update(existingUser.id, {
+      authInfo: {
+        password: hashedPassword,
+      },
+    });
+
+    return {
+      message: 'Password reset successfully',
+      result: [],
     };
   }
 

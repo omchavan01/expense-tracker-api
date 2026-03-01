@@ -1,19 +1,20 @@
 import {
   Column,
   Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 
 import { UserAuthInfo } from './user-auth-info';
 import { UserBasicInfo } from '../onboarding/user-basic-info';
-import { UserOccupationInfo } from '../onboarding/user-occupation-info';
 import { UserTokenInfo } from './user-token-info';
 import { Categories } from '../onboarding/categories.entity';
+import { Currency } from '../common/currency.entity';
 
 @Entity()
-@Unique(['authInfo.email'])
 export class Users {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,14 +25,22 @@ export class Users {
   @Column(() => UserBasicInfo)
   basicInfo: UserBasicInfo;
 
-  @Column(() => UserOccupationInfo)
-  occupationInfo: UserOccupationInfo;
+  @Column({ type: 'varchar', nullable: true, length: 3 })
+  currencyCode: string | null;
 
   @OneToMany(() => Categories, (category) => category.user)
-  categories: Categories[];
+  categoriesInfo: Categories[];
 
   @Column(() => UserTokenInfo)
   tokenInfo: UserTokenInfo;
+
+  @Index()
+  @ManyToOne(() => Currency, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'currencyCode', referencedColumnName: 'code' })
+  currency: Currency | null;
 
   @Column({ default: 0 })
   onboardingStep: number;

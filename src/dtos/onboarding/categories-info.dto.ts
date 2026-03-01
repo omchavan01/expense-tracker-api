@@ -6,9 +6,12 @@ import {
   ValidateNested,
   IsDefined,
   IsArray,
-  ArrayMaxSize,
-  ArrayMinSize,
+  IsEnum,
+  Validate,
 } from 'class-validator';
+
+import { CategoryLimitsValidator } from '../custom-validators/category-limits.validator';
+import { CategoryTypeEnum } from 'src/utils/enums/category-type-enum';
 
 export class CategoryInfo {
   @IsString()
@@ -20,14 +23,17 @@ export class CategoryInfo {
   value: string;
 
   @IsBoolean()
-  @IsDefined({ message: 'Is active is required' })
+  @IsDefined({ message: 'status is required' })
   active: boolean;
+
+  @IsEnum(CategoryTypeEnum)
+  @IsNotEmpty({ message: 'Category type is required' })
+  categoryType: CategoryTypeEnum;
 }
 
 export class OnboardingCategoriesInfoDto {
   @IsArray()
-  @ArrayMinSize(5, { message: 'Minimum 5 categories are required' })
-  @ArrayMaxSize(15, { message: 'Maximum 15 categories are allowed' })
+  @Validate(CategoryLimitsValidator)
   @ValidateNested({ each: true })
   @Type(() => CategoryInfo)
   categoriesInfo: CategoryInfo[];
