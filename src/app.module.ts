@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { CurrencyModule } from './modules/currency/currency.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
     AuthModule,
     OnboardingModule,
     CurrencyModule,
+    UsersModule,
   ],
   controllers: [AppController],
 })

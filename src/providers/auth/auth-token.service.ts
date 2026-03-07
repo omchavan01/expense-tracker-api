@@ -1,11 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import ms, { StringValue } from 'ms';
 
 import { Users } from 'src/entities/auth/users.entity';
 import { JWTAccessTokenService } from '../jwt/jwt-access-token.service';
 import { JWTRefreshTokenService } from '../jwt/jwt-refresh-token.service';
-import { hashPassword } from 'src/utils/hash-password';
+import { comparePassword, hashPassword } from 'src/utils/hash-password';
+import { JwtPayload } from 'src/utils/types';
 
 @Injectable()
 export class AuthTokenService {
@@ -13,6 +20,7 @@ export class AuthTokenService {
     @InjectRepository(Users) private usersRepository: Repository<Users>,
     private readonly jwtAccessTokenService: JWTAccessTokenService,
     private readonly jwtRefreshTokenService: JWTRefreshTokenService,
+    private readonly configService: ConfigService,
   ) {}
 
   async generateTokens(user: Users) {
@@ -21,14 +29,20 @@ export class AuthTokenService {
     const refreshToken =
       await this.jwtRefreshTokenService.refreshToken(payload);
 
-    const decodedAccessToken =
-      await this.jwtAccessTokenService.verifyAccessToken(accessToken);
-    const decodedRefreshToken =
-      await this.jwtRefreshTokenService.verifyRefreshToken(refreshToken);
-    const accessTokenExpiresAt = new Date(decodedAccessToken.exp! * 1000);
-    const refreshTokenExpiresAt = new Date(decodedRefreshToken.exp! * 1000);
+    const accessTokenExpiresIn = this.configService.get<StringValue>(
+      'JWT_ACCESS_TOKEN_EXPIRES_IN',
+    );
+    const refreshTokenExpiresIn = this.configService.get<StringValue>(
+      'JWT_REFRESH_TOKEN_EXPIRES_IN',
+    );
 
-    const hashedAccessToken = await hashPassword(accessToken);
+    const accessTokenExpiresAt = new Date(
+      Date.now() + ms(accessTokenExpiresIn!),
+    );
+    const refreshTokenExpiresAt = new Date(
+      Date.now() + ms(refreshTokenExpiresIn!),
+    );
+
     const hashedRefreshToken = await hashPassword(refreshToken);
     await this.usersRepository.update(
       {
@@ -36,9 +50,7 @@ export class AuthTokenService {
       },
       {
         tokenInfo: {
-          accessToken: hashedAccessToken,
           refreshToken: hashedRefreshToken,
-          accessTokenExpiresAt,
           refreshTokenExpiresAt,
         },
       },
@@ -50,5 +62,38 @@ export class AuthTokenService {
       accessTokenExpiresAt,
       refreshTokenExpiresAt,
     };
+  }
+
+  async refreshToken(userRefreshToken: string) {
+    let payload: JwtPayload;
+    try {
+      payload =
+        await this.jwtRefreshTokenService.verifyRefreshToken(userRefreshToken);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    const user = await this.usersRepository.findOne({
+      where: { id: payload?.sub },
+    });
+    if (!user) throw new NotFoundException('User does not exist');
+
+    const compareRefreshToken = await comparePassword(
+      userRefreshToken,
+      user?.tokenInfo?.refreshToken ?? '',
+    );
+    if (!compareRefreshToken)
+      throw new UnauthorizedException('Invalid refresh token');
+    const tokens = await this.generateTokens(user);
+
+    return tokens;
+  }
+
+  async removeToken(id: number) {
+    await this.usersRepository.update(id, {
+      tokenInfo: {
+        refreshToken: null,
+        refreshTokenExpiresAt: null,
+      },
+    });
   }
 }
