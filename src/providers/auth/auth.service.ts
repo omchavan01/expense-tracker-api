@@ -103,4 +103,24 @@ export class AuthService {
       },
     };
   }
+
+  async logout(id: number) {
+    await this.authTokenService.removeToken(id);
+
+    return {
+      message: 'User logged out successfully',
+      result: [],
+    };
+  }
+
+  async refreshToken(refreshToken: string) {
+    const tokens = await this.authTokenService.refreshToken(refreshToken);
+
+    return {
+      message: 'Token refreshed successfully',
+      result: {
+        ...tokens,
+      },
+    };
+  }
 }
