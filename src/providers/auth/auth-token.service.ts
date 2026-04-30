@@ -23,21 +23,14 @@ export class AuthTokenService {
     private readonly configService: ConfigService,
   ) {}
 
-  async generateTokens(user: Users) {
+  async generateAccessAndRefreshTokens(user: Users) {
     const payload = { sub: user.id, email: user.authInfo.email };
     const accessToken = await this.jwtAccessTokenService.accessToken(payload);
     const refreshToken =
       await this.jwtRefreshTokenService.refreshToken(payload);
 
-    const accessTokenExpiresIn = this.configService.get<StringValue>(
-      'JWT_ACCESS_TOKEN_EXPIRES_IN',
-    );
     const refreshTokenExpiresIn = this.configService.get<StringValue>(
       'JWT_REFRESH_TOKEN_EXPIRES_IN',
-    );
-
-    const accessTokenExpiresAt = new Date(
-      Date.now() + ms(accessTokenExpiresIn!),
     );
     const refreshTokenExpiresAt = new Date(
       Date.now() + ms(refreshTokenExpiresIn!),
@@ -59,13 +52,17 @@ export class AuthTokenService {
     return {
       accessToken,
       refreshToken,
-      accessTokenExpiresAt,
-      refreshTokenExpiresAt,
     };
+  }
+
+  async generateAccessToken(user: Users) {
+    const payload = { sub: user.id, email: user.authInfo.email };
+    return await this.jwtAccessTokenService.accessToken(payload);
   }
 
   async refreshToken(userRefreshToken: string) {
     let payload: JwtPayload;
+    let tokens: { accessToken: string; refreshToken: string };
     try {
       payload =
         await this.jwtRefreshTokenService.verifyRefreshToken(userRefreshToken);
@@ -83,8 +80,23 @@ export class AuthTokenService {
     );
     if (!compareRefreshToken)
       throw new UnauthorizedException('Invalid refresh token');
-    const tokens = await this.generateTokens(user);
 
+    const refreshTokenThreshold = this.configService.get<StringValue>(
+      'REFRESH_TOKEN_THRESHOLD',
+    );
+    const isNearExpiry =
+      user.tokenInfo.refreshTokenExpiresAt! <
+      new Date(Date.now() + ms(refreshTokenThreshold!));
+    console.log('isNear expiry', isNearExpiry);
+    if (isNearExpiry) {
+      tokens = await this.generateAccessAndRefreshTokens(user);
+    } else {
+      tokens = {
+        accessToken: await this.generateAccessToken(user),
+        refreshToken: userRefreshToken,
+      };
+    }
+    console.log(tokens, 'tokens');
     return tokens;
   }
 
