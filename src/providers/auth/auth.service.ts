@@ -40,7 +40,8 @@ export class AuthService {
     });
 
     // Generate tokens
-    const tokens = await this.authTokenService.generateTokens(newUser);
+    const tokens =
+      await this.authTokenService.generateAccessAndRefreshTokens(newUser);
 
     return {
       message: 'User created successfully',
@@ -91,7 +92,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
 
     // Generate tokens
-    const tokens = await this.authTokenService.generateTokens(user);
+    const tokens =
+      await this.authTokenService.generateAccessAndRefreshTokens(user);
 
     return {
       message: 'User logged in successfully',
