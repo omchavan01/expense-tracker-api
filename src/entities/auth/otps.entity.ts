@@ -1,7 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-@Unique(['email'])
 export class Otps {
   @PrimaryGeneratedColumn()
   id: number;
