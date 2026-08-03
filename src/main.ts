@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
 
 import { AppModule } from './app.module';
 
@@ -13,6 +14,12 @@ const bootstrap = async () => {
     const baseUrl = configService.get<string>('BASE_URL');
 
     if (baseUrl) {
+      app.use((req: Request, res: Response, next: NextFunction) => {
+        if (req.path === '/') {
+          return res.redirect(baseUrl);
+        }
+        next();
+      });
       app.setGlobalPrefix(baseUrl);
     }
 

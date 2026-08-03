@@ -1,9 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 
-@Controller('/')
+@Controller()
 export class AppController {
   @Get()
-  getHelloWorld(): string {
+  getApiInfo(): string {
     return 'Welcome to the Expense Tracker API';
   }
 }

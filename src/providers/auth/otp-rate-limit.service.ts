@@ -1,27 +1,25 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
 @Injectable()
 export class OtpRateLimitService {
-  private redis: Redis;
-  private isProduction: boolean;
+  private readonly logger = new Logger(OtpRateLimitService.name);
+  private redis?: Redis;
 
   constructor(private readonly configService: ConfigService) {
-    this.isProduction =
-      this.configService.get<string>('NODE_ENV') === 'production';
-    if (this.isProduction) {
-      const redisUrl = this.configService.get<string>('REDIS_URL');
-      if (!redisUrl) {
-        throw new Error('REDIS_URL is not configured in environment variables');
-      }
+    const redisUrl = this.configService.get<string>('REDIS_URL');
+    if (redisUrl) {
       this.redis = new Redis(redisUrl);
+    } else {
+      this.logger.warn(
+        'REDIS_URL is not configured — OTP rate limiting is disabled',
+      );
     }
   }
 
   async rateLimit(email: string) {
-    // If not production or redis is not initialized, return true
-    if (!this.isProduction || !this.redis) return true;
+    if (!this.redis) return true;
 
     const key = `otp:rate:limit:${email}`;
     const limit = 3;
