@@ -9,7 +9,3 @@ export interface AuthenticatedUser {
   id: number;
   email: string;
 }
-
-export type RestCountryCurrencyResponse = {
-  currencies?: Record<string, { name?: string; symbol?: string }>;
-};
