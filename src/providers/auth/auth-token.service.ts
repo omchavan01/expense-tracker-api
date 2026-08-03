@@ -87,7 +87,6 @@ export class AuthTokenService {
     const isNearExpiry =
       user.tokenInfo.refreshTokenExpiresAt! <
       new Date(Date.now() + ms(refreshTokenThreshold!));
-    console.log('isNear expiry', isNearExpiry);
     if (isNearExpiry) {
       tokens = await this.generateAccessAndRefreshTokens(user);
     } else {
@@ -96,7 +95,6 @@ export class AuthTokenService {
         refreshToken: userRefreshToken,
       };
     }
-    console.log(tokens, 'tokens');
     return tokens;
   }
 
